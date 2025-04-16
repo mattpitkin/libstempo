@@ -820,6 +820,7 @@ cdef class tempopulsar:
 
         self.noisemodel = OrderedDict()
 
+	print(f"nT2efac: {self.psr[0].nT2efac}")
         for i in range(self.psr[0].nT2efac):
             name = 'efac_' + string(self.psr[0].T2efacFlagVal[i])
 
@@ -829,8 +830,10 @@ cdef class tempopulsar:
 
         self.psr[0].nT2efac = 0
 
+	print(f"nT2equad: {self.psr[0].nT2equad}")
         for i in range(self.psr[0].nT2equad):
-            efacname = 'efac_' + string(self.psr[0].T2equadFlagVal[i])
+            print(f"Value: {self.psr[0].T2equadFlagVal[i]}")
+	    efacname = 'efac_' + string(self.psr[0].T2equadFlagVal[i])
             name = 'equad_' + string(self.psr[0].T2equadFlagVal[i])
 
             value = self.psr[0].T2equadVal[i] * (self.noisemodel[efacname].val if efacname in self.noisemodel else 1.0)
