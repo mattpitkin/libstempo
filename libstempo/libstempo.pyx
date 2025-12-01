@@ -823,7 +823,7 @@ cdef class tempopulsar:
             else:
                 raise IOError("Cannot find timfile {0}.".format(timfile))
 
-        parfile_bytes, timfile_bytes = (parfile + "\0").encode(), (timfile + "\0").encode()
+        parfile_bytes, timfile_bytes = (parfile + "\0").encode("utf-8", errors="ignore"), (timfile + "\0").encode("utf-8", errors="ignore")
 
         for checkfile in [parfile_bytes, timfile_bytes]:
             if len(checkfile) > MAX_FILELEN:
@@ -977,7 +977,7 @@ cdef class tempopulsar:
             return array
 
     def _setstring(self,char* string,maxlen,value):
-        value_bytes = (value + "\0").encode()
+        value_bytes = (value + "\0").encode("utf-8", errors="ignore")
         cdef const char *value_c_str = value_bytes
         cdef size_t vblen = sizeof(char) * len(value_bytes)
 
@@ -1193,7 +1193,7 @@ cdef class tempopulsar:
 
         def __set__(self,value):
             # this is OK in both Python 2 and 3
-            name_bytes = (value + "\0").encode()
+            name_bytes = (value + "\0").encode("utf-8", errors="ignore")
             cdef const char *name_c_str = name_bytes
             cdef size_t nlen = sizeof(char) * len(name_bytes)
 
@@ -1210,7 +1210,7 @@ cdef class tempopulsar:
             return string(self.psr[0].binaryModel)
 
         def __set__(self,value):
-            model_bytes = (value + "\0").encode()
+            model_bytes = (value + "\0").encode("utf-8", errors="ignore")
             cdef const char *model_c_str = model_bytes
             cdef size_t mblen = sizeof(char) * len(model_bytes)
 
@@ -1228,7 +1228,7 @@ cdef class tempopulsar:
 
         def __set__(self,value):
             def seteph(filename,usecalceph=False):
-                model_bytes = (filename + "\0").encode()
+                model_bytes = (filename + "\0").encode("utf-8", errors="ignore")
                 cdef const char *model_c_str = model_bytes
                 cdef size_t mblen = sizeof(char) * len(model_bytes)
 
@@ -1279,7 +1279,7 @@ cdef class tempopulsar:
             return string(self.psr[0].clock)
 
         def __set__(self, value):
-            value_bytes = (value + "\0").encode()
+            value_bytes = (value + "\0").encode("utf-8", errors="ignore")
             cdef const char *value_c_str = value_bytes
             cdef size_t vlen = sizeof(char) * len(value_bytes)
 
@@ -1743,7 +1743,7 @@ cdef class tempopulsar:
                         # set reference epoch
                         self["TZRMJD"].val = epoch
                     if site is not None:
-                        sitestr = str.encode(site) + b"\0"  # append null character
+                        sitestr = str(site).encode("utf-8", errors="ignore") + b"\0"  # append null character
                         strncpy(<char *>&(self.psr[0].tzrsite[0]), sitestr, len(sitestr) * sizeof(char))
                     if freq is not None:
                         self["TZRFRQ"] = freq
@@ -2235,7 +2235,7 @@ cdef class tempopulsar:
         if not parfile:
             parfile = self.parfile
 
-        parfile_bytes = (parfile + "\0").encode()
+        parfile_bytes = (parfile + "\0").encode("utf-8", errors="ignore")
 
         cdef const char *parfile_c_bytes = parfile_bytes
         
@@ -2269,7 +2269,7 @@ cdef class tempopulsar:
         if not timfile:
             timfile = self.timfile
 
-        timfile_bytes = (timfile + "\0").encode()
+        timfile_bytes = (timfile + "\0").encode("utf-8", errors="ignore")
 
         cdef const char *timfile_c_bytes = timfile_bytes
 
@@ -2311,11 +2311,11 @@ def rewritetim(timfile):
 
             # encodes are needed here because file is open in binary mode
             if m:
-                out.write('{0} {1}/{2}\n'.format(m.group(1),os.path.dirname(timfile),m.group(2)).encode())
+                out.write('{0} {1}/{2}\n'.format(m.group(1),os.path.dirname(timfile),m.group(2)).encode("utf-8", errors="ignore"))
             else:
-                out.write(line.encode())
+                out.write(line.encode("utf-8", errors="ignore"))
         else:
-            out.write(line.encode())
+            out.write(line.encode("utf-8", errors="ignore"))
 
     return out.name
 
