@@ -10,11 +10,16 @@ from collections import OrderedDict
 # what is the default encoding here?
 def string(buf):
     # take bytes up to the first '\0'
-    raw = bytes(buf).split(b'\0', 1)[0]
+    #raw = bytes(buf).split(b'\0', 1)[0]
     try:
-        return raw.decode('utf-8')
+        return buf.decode('utf-8')
     except UnicodeDecodeError:
-        return raw.decode('latin-1')
+        try:
+            return buf.decode('latin-1')
+        except UnicodeDecodeError:
+            # just ignore invalid characters
+            return buf.decode('ascii', errors='ignore')
+
 
 string_dtype = 'U'
 
