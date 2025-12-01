@@ -2237,6 +2237,8 @@ cdef class tempopulsar:
 
         parfile_bytes = (parfile + "\0").encode("utf-8", errors="ignore")
 
+        print(parfile_bytes)
+
         cdef const char *parfile_c_bytes = parfile_bytes
         
         if len(parfile_bytes) > MAX_FILELEN:
@@ -2270,6 +2272,8 @@ cdef class tempopulsar:
             timfile = self.timfile
 
         timfile_bytes = (timfile + "\0").encode("utf-8", errors="ignore")
+
+        print(timfile_bytes)
 
         cdef const char *timfile_c_bytes = timfile_bytes
 
