@@ -9,16 +9,10 @@ from collections import OrderedDict
 
 # what is the default encoding here?
 def string(buf):
-    # take bytes up to the first '\0'
-    #raw = bytes(buf).split(b'\0', 1)[0]
     try:
         return buf.decode('utf-8')
     except UnicodeDecodeError:
-        try:
-            return buf.decode('latin-1')
-        except UnicodeDecodeError:
-            # just ignore invalid characters
-            return buf.decode('ascii', errors='ignore')
+        return buf.decode('utf-8', errors='replace')
 
 
 string_dtype = 'U'
@@ -2237,8 +2231,6 @@ cdef class tempopulsar:
 
         parfile_bytes = (parfile + "\0").encode("utf-8", errors="ignore")
 
-        print(parfile_bytes)
-
         cdef const char *parfile_c_bytes = parfile_bytes
         
         if len(parfile_bytes) > MAX_FILELEN:
@@ -2272,8 +2264,6 @@ cdef class tempopulsar:
             timfile = self.timfile
 
         timfile_bytes = (timfile + "\0").encode("utf-8", errors="ignore")
-
-        print(timfile_bytes)
 
         cdef const char *timfile_c_bytes = timfile_bytes
 
