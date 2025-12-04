@@ -9,11 +9,16 @@ from collections import OrderedDict
 
 # what is the default encoding here?
 def string(buf):
+    # take bytes up to the first '\0'
+    #raw = bytes(buf).split(b'\0', 1)[0]
     try:
         return buf.decode('utf-8')
     except UnicodeDecodeError:
-        # just replace invalid characters
-        return buf.decode('utf-8', errors='replace')
+        try:
+            return buf.decode('latin-1')
+        except UnicodeDecodeError:
+            # just ignore invalid characters
+            return buf.decode('ascii', errors='ignore')
 
 
 string_dtype = 'U'
@@ -77,8 +82,6 @@ try:
 except AttributeError:
     NP_LONG_DOUBLE_FORMAT = numpy.double
 
-ctypedef numpy.longdouble_t longdouble
-
 # return numpy array as astropy table with unit
 def dimensionfy(unit):
     def dimensionfy_decorator(func):
@@ -96,16 +99,16 @@ cdef extern from "GWsim-stub.h":
     cdef bint HAVE_GWSIM
 
     ctypedef struct gwSrc:
-        longdouble theta_g
-        longdouble phi_g
-        longdouble omega_g
-        longdouble phi_polar_g
+        long double theta_g
+        long double phi_g
+        long double omega_g
+        long double phi_polar_g
 
-    void GWbackground(gwSrc *gw,int numberGW,long *idum,longdouble flo,longdouble fhi,double gwAmp,double alpha,int loglin)
-    void GWdipolebackground(gwSrc *gw,int numberGW,long *idum,longdouble flo,longdouble fhi, double gwAmp,double alpha,int loglin, double *dipoleamps)
+    void GWbackground(gwSrc *gw,int numberGW,long *idum,long double flo,long double fhi,double gwAmp,double alpha,int loglin)
+    void GWdipolebackground(gwSrc *gw,int numberGW,long *idum,long double flo,long double fhi, double gwAmp,double alpha,int loglin, double *dipoleamps)
     void setupGW(gwSrc *gw)
-    void setupPulsar_GWsim(longdouble ra_p,longdouble dec_p,longdouble *kp)
-    longdouble calculateResidualGW(longdouble *kp,gwSrc *gw,longdouble obstime,longdouble dist)
+    void setupPulsar_GWsim(long double ra_p,long double dec_p,long double *kp)
+    long double calculateResidualGW(long double *kp,gwSrc *gw,long double obstime,long double dist)
 
 cdef extern from "tempo2.h":
     enum: MAX_PSR_VAL
@@ -146,28 +149,28 @@ cdef extern from "tempo2.h":
     ctypedef struct parameter:
         char **label
         char **shortlabel
-        longdouble *val
-        longdouble *err
+        long double *val
+        long double *err
         int  *fitFlag
         int  *paramSet
-        longdouble *prefit
-        longdouble *prefitErr
+        long double *prefit
+        long double *prefitErr
         int aSize
 
     ctypedef struct observation:
-        longdouble sat        # site arrival time
-        longdouble origsat	   # Backup of SAT
-        longdouble sat_day	   # Just the Day part
-        longdouble sat_sec	   # Just the Sec part
-        longdouble bat        # barycentric arrival time
-        longdouble batCorr    #update from sat-> bat
-        longdouble bbat       # barycentric arrival time
-        longdouble pet        # pulsar emission time
+        long double sat        # site arrival time
+        long double origsat	   # Backup of SAT
+        long double sat_day	   # Just the Day part
+        long double sat_sec	   # Just the Sec part
+        long double bat        # barycentric arrival time
+        long double batCorr    #update from sat-> bat
+        long double bbat       # barycentric arrival time
+        long double pet        # pulsar emission time
         int clockCorr          # = 1 for clock corrections to be applied, = 0 for BAT
         int delayCorr          # = 1 for time delay corrections to be applied, = 0 for BAT
         int deleted            # 1 if observation deleted, -1 if not in fit
-        longdouble prefitResidual
-        longdouble residual
+        long double prefitResidual
+        long double residual
         double freq            # frequency of observation (in MHz)
         double freqSSB         # frequency of observation in barycentric frame (in Hz)
         double toaErr          # error on TOA (in us)
@@ -183,9 +186,9 @@ cdef extern from "tempo2.h":
         double psrPos[3]       # Unit vector to the pulsar position
         double zenith[3]       # Zenith vector, in BC frame. Length=geodetic height
         double shapiroDelaySun     # Shapiro delay caused by the Sun
-        longdouble roemer     # Roemer delay
-        longdouble torb       # Combined binary delay
-        longdouble phase      # the phase (cycles)
+        long double roemer     # Roemer delay
+        long double torb       # Combined binary delay
+        long double phase      # the phase (cycles)
         long long pulseN       # Pulse number
         char flagID[MAX_FLAGS][MAX_FLAG_LEN]          # ID of flags
         char flagVal[MAX_FLAGS][MAX_FLAG_LEN]          # Value of flags
@@ -253,7 +256,7 @@ cdef extern from "tempo2.h":
         int useCalceph
         char tzrsite[100]
         int eclCoord            # = 1 for ecliptic coords otherwise celestial coords
-        # longdouble phaseJump[MAX_JUMPS] # Time of phase jump (Deprecated. WHY?)
+        # long double phaseJump[MAX_JUMPS] # Time of phase jump (Deprecated. WHY?)
         int phaseJumpID[MAX_JUMPS]         # ID of closest point to phase jump
         int phaseJumpDir[MAX_JUMPS]        # Size and direction of phase jump
         int nPhaseJump                     # Number of phase jumps
@@ -359,10 +362,10 @@ cdef extern from "t2fit-stub.h":
 
     void t2fit_fillOneParameterFitInfo(pulsar* psr,param_label fit_param,const int k,FitInfo& OUT)
 
-cdef void set_longdouble_from_array(longdouble *p,numpy.ndarray[numpy.npy_longdouble,ndim=0] a):
-    p[0] = (<longdouble*>(a.data))[0]
+cdef void set_longdouble_from_array(long double *p,numpy.ndarray[numpy.npy_longdouble,ndim=0] a):
+    p[0] = (<long double*>(a.data))[0]
 
-cdef void set_longdouble(longdouble *p,object o):
+cdef void set_longdouble(long double *p,object o):
     if isinstance(o,numpy.longdouble):
         set_longdouble_from_array(p,o[...])
     elif isinstance(o,numpy.ndarray) and o.dtype == numpy.longdouble and o.ndim == 0:
@@ -370,9 +373,9 @@ cdef void set_longdouble(longdouble *p,object o):
     else:
         p[0] = o
 
-cdef object get_longdouble_as_scalar(longdouble v):
+cdef object get_longdouble_as_scalar(long double v):
     cdef numpy.ndarray ret = numpy.array(0,dtype=numpy.longdouble)
-    (<longdouble*>ret.data)[0] = v
+    (<long double*>ret.data)[0] = v
     return ret.item()
 
 cdef class tempopar:
@@ -403,7 +406,7 @@ cdef class tempopar:
     property val:
         def __get__(self):
             if not self._isjump and not self._isfdjump:
-                return self._unitify(get_longdouble_as_scalar((<longdouble*>self._val)[0]))
+                return self._unitify(get_longdouble_as_scalar((<long double*>self._val)[0]))
             else:
                 return self._unitify(float((<double*>self._val)[0]))
 
@@ -420,14 +423,14 @@ cdef class tempopar:
                 if not self._paramSet[0]:
                     self._paramSet[0] = 1
 
-                set_longdouble(<longdouble*>self._val,value)
+                set_longdouble(<long double*>self._val,value)
             else:
                 (<double*>self._val)[0] = value
 
     property err:
         def __get__(self):
             if not self._isjump and not self._isfdjump:
-                return self._unitify(get_longdouble_as_scalar((<longdouble*>self._err)[0]))
+                return self._unitify(get_longdouble_as_scalar((<long double*>self._err)[0]))
             else:
                 return self._unitify(float((<double*>self._err)[0]))
 
@@ -436,7 +439,7 @@ cdef class tempopar:
                 value = value.to(self.unit).value
 
             if not self._isjump and not self._isfdjump:
-                set_longdouble(<longdouble*>self._err,value)
+                set_longdouble(<long double*>self._err,value)
             else:
                 (<double*>self._err)[0] = value
 
@@ -628,19 +631,19 @@ cdef class GWB:
         stdlib.free(self.gw)
 
     def gwb_sig(self,tempopulsar pulsar, distance=1):
-        cdef longdouble dist = distance * 3.086e19
+        cdef long double dist = distance * 3.086e19
 
-        cdef longdouble ra_p  = pulsar.psr[0].param[param_raj].val[0]
-        cdef longdouble dec_p = pulsar.psr[0].param[param_decj].val[0]
+        cdef long double ra_p  = pulsar.psr[0].param[param_raj].val[0]
+        cdef long double dec_p = pulsar.psr[0].param[param_decj].val[0]
 
-        cdef longdouble epoch = pulsar.psr[0].param[param_pepoch].val[0]
+        cdef long double epoch = pulsar.psr[0].param[param_pepoch].val[0]
 
-        cdef longdouble kp[3]
+        cdef long double kp[3]
 
         setupPulsar_GWsim(ra_p,dec_p,&kp[0])
 
-        cdef numpy.ndarray[longdouble,ndim=1] res = numpy.zeros(pulsar.nobs,numpy.longdouble)
-        cdef longdouble obstime
+        cdef numpy.ndarray[long double,ndim=1] res = numpy.zeros(pulsar.nobs,numpy.longdouble)
+        cdef long double obstime
 
         for i in range(pulsar.nobs):
             obstime = (pulsar.psr[0].obsn[i].sat - epoch)*86400.0
@@ -1008,8 +1011,8 @@ cdef class tempopulsar:
     def _set_observation_from_input(self, toas):
         """Fill in all observation values from input TOAs."""
 
-        cdef longdouble [:] _satday = <longdouble [:self.psr[0].nobs]>&(self.psr[0].obsn[0].sat_day)
-        cdef longdouble [:] _satsec = <longdouble [:self.psr[0].nobs]>&(self.psr[0].obsn[0].sat_sec)
+        cdef long double [:] _satday = <long double [:self.psr[0].nobs]>&(self.psr[0].obsn[0].sat_day)
+        cdef long double [:] _satsec = <long double [:self.psr[0].nobs]>&(self.psr[0].obsn[0].sat_sec)
         cdef int [:] _deleted = <int [:self.psr[0].nobs]>&(self.psr[0].obsn[0].deleted)
         cdef int [:] _nflags = <int [:self.psr[0].nobs]>&(self.psr[0].obsn[0].nFlags)
         cdef double [:] _phaseoff = <double [:self.psr[0].nobs]>&(self.psr[0].obsn[0].phaseOffset)
@@ -1409,7 +1412,7 @@ cdef class tempopulsar:
         Return computed SSB TOAs in MJD as a numpy.longdouble array.
         You get a copy of the current tempo2 array."""
 
-        cdef longdouble [:] _toas = <longdouble [:self.nobs]>&(self.psr[0].obsn[0].bat)
+        cdef long double [:] _toas = <long double [:self.nobs]>&(self.psr[0].obsn[0].bat)
         _toas.strides[0] = sizeof(observation)
 
         if updatebats:
@@ -1424,7 +1427,7 @@ cdef class tempopulsar:
         You get a view of the original tempo2 data structure, which you can write to."""
 
         def __get__(self):
-            cdef longdouble [:] _stoas = <longdouble [:self.nobs]>&(self.psr[0].obsn[0].sat)
+            cdef long double [:] _stoas = <long double [:self.nobs]>&(self.psr[0].obsn[0].sat)
             _stoas.strides[0] = sizeof(observation)
 
             return numpy.asarray(_stoas)
@@ -1433,7 +1436,7 @@ cdef class tempopulsar:
         """Return Roemer delay in seconds as a numpy.longdouble array."""
 
         def __get__(self):
-            cdef longdouble [:] _roemer = <longdouble [:self.nobs]>&(self.psr[0].obsn[0].roemer)
+            cdef long double [:] _roemer = <long double [:self.nobs]>&(self.psr[0].obsn[0].roemer)
             _roemer.strides[0] = sizeof(observation)
 
             return numpy.asarray(_roemer)
@@ -1581,10 +1584,10 @@ cdef class tempopulsar:
     def origSats(self):
         """tempopulsar.origSats()
 
-        Return originally loaded value of the SAT in case it is updated afterwards. Returned as longdouble array.
+        Return originally loaded value of the SAT in case it is updated afterwards. Returned as long double array.
         You get a copy of the current values."""
 
-        cdef longdouble [:] _origSats = <longdouble [:self.nobs]>&(self.psr[0].obsn[0].origsat)
+        cdef long double [:] _origSats = <long double [:self.nobs]>&(self.psr[0].obsn[0].origsat)
         _origSats.strides[0] = sizeof(observation)
 
         return self._dimensionfy(numpy.asarray(_origSats),u.s) if self.units else numpy.asarray(_origSats)
@@ -1594,10 +1597,10 @@ cdef class tempopulsar:
     def satDay(self):
         """tempopulsar.satDay()
 
-        Return the day part of the SAT as longdouble array.
+        Return the day part of the SAT as long double array.
         You get a copy of the current values."""
 
-        cdef longdouble [:] _satDays = <longdouble [:self.nobs]>&(self.psr[0].obsn[0].sat_day)
+        cdef long double [:] _satDays = <long double [:self.nobs]>&(self.psr[0].obsn[0].sat_day)
         _satDays.strides[0] = sizeof(observation)
 
         return self._dimensionfy(numpy.asarray(_satDays),u.s) if self.units else numpy.asarray(_satDays)
@@ -1607,10 +1610,10 @@ cdef class tempopulsar:
     def satSec(self):
         """tempopulsar.satSec()
 
-        Return decimal part of the SAT as a longdouble array
+        Return decimal part of the SAT as a long double array
         You get a copy of the current values."""
 
-        cdef longdouble [:] _satSecs  = <longdouble [:self.nobs]>&(self.psr[0].obsn[0].sat_sec)
+        cdef long double [:] _satSecs  = <long double [:self.nobs]>&(self.psr[0].obsn[0].sat_sec)
         _satSecs.strides[0] = sizeof(observation)
 
         return self._dimensionfy(numpy.asarray(_satSecs),u.s) if self.units else numpy.asarray(_satSecs)
@@ -1623,7 +1626,7 @@ cdef class tempopulsar:
         Return computed correction to SSB in units of days.
         You get a copy of the current values."""
 
-        cdef longdouble [:] _batCorr = <longdouble [:self.nobs]>&(self.psr[0].obsn[0].batCorr)
+        cdef long double [:] _batCorr = <long double [:self.nobs]>&(self.psr[0].obsn[0].batCorr)
         _batCorr.strides[0] = sizeof(observation)
 
         return self._dimensionfy(numpy.asarray(_batCorr),u.s) if self.units else numpy.asarray(_batCorr)
@@ -1688,7 +1691,7 @@ cdef class tempopulsar:
         Return computed pulsar emission times in MJD as a numpy.longdouble array.
         You get a copy of the current tempo2 array."""
 
-        cdef longdouble [:] _pets = <longdouble [:self.nobs]>&(self.psr[0].obsn[0].pet)
+        cdef long double [:] _pets = <long double [:self.nobs]>&(self.psr[0].obsn[0].pet)
         _pets.strides[0] = sizeof(observation)
 
         if updatebats:
@@ -1714,7 +1717,7 @@ cdef class tempopulsar:
         given, the `epoch`, `site` and `freq` values.
         """
 
-        cdef longdouble [:] _res = <longdouble [:self.nobs]>&(self.psr[0].obsn[0].residual)
+        cdef long double [:] _res = <long double [:self.nobs]>&(self.psr[0].obsn[0].residual)
         _res.strides[0] = sizeof(observation)
 
         if removemean not in [True, False, 'weighted', 'first', 'refphs']:
@@ -1835,7 +1838,7 @@ cdef class tempopulsar:
 
         cdef numpy.ndarray[double,ndim=2] ret = numpy.zeros((self.nobs,self.ndim+1),'d')
 
-        cdef longdouble epoch = self.psr[0].param[param_pepoch].val[0]
+        cdef long double epoch = self.psr[0].param[param_pepoch].val[0]
         cdef observation *obsns = self.psr[0].obsn
 
         if updatebats:
@@ -1914,7 +1917,7 @@ cdef class tempopulsar:
         Does not reform residuals."""
 
         # TODO: Is it not much faster to call DDmodel/XXmodel directly?
-        cdef longdouble [:] _torb = <longdouble [:self.nobs]>&(self.psr[0].obsn[0].torb)
+        cdef long double [:] _torb = <long double [:self.nobs]>&(self.psr[0].obsn[0].torb)
         _torb.strides[0] = sizeof(observation)
 
         return numpy.asarray(_torb).copy()
@@ -2077,7 +2080,7 @@ cdef class tempopulsar:
         the `residuals` method.
         """
 
-        cdef longdouble [:] _phase = <longdouble [:self.nobs]>&(self.psr[0].obsn[0].phase)
+        cdef long double [:] _phase = <long double [:self.nobs]>&(self.psr[0].obsn[0].phase)
         _phase.strides[0] = sizeof(observation)
 
         _ = self.residuals(**kwargs)
